@@ -10,7 +10,7 @@ class Shelter:
         self.emergency = emergency
         self.family = family
         self.latitude = latitude
-        self.longitude
+        self.longitude = longitude
 
     def setTitle(self, title):
         self.title = title
@@ -71,7 +71,7 @@ class Shelter:
 
     def setLatitude(self, latitude):
         self.latitude = latitude
-    
+
     def getLongitude(self):
         return self.longitude
 
