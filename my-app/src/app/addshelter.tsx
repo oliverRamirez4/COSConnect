@@ -91,13 +91,36 @@ function AddShelterPage({ onBack, onAdd }: AddShelterPageProps) {
 
     // Write to shelters table via API
     try {
+      // Map to API payload keys expected by the server
+      const payload = {
+        title: newShelter.title,
+        description: newShelter.description,
+        numTotBeds: newShelter.numtotbeds,
+        numOpenBeds: newShelter.numopenbeds,
+        address: newShelter.address,
+        longitude: newShelter.longitude,
+        latitude: newShelter.latitude,
+        phone: newShelter.phone,
+        families: newShelter.families,
+        single_women: newShelter.single_women,
+        single_men: newShelter.single_men,
+        domestic_violence: newShelter.domestic_violence,
+        pet_friendly: newShelter.pet_friendly,
+        age_min: newShelter.age_min,
+        age_max: newShelter.age_max,
+        wheelchair_accessible: newShelter.wheelchair_accessible,
+        website: newShelter.website,
+      };
+
       const res = await fetch("/api/shelters", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newShelter)
+        body: JSON.stringify(payload)
       });
       if (!res.ok) {
-        throw new Error("Failed to add shelter");
+        const errJson = await res.json().catch(() => ({}));
+        const msg = errJson?.error || errJson?.message || "Failed to add shelter";
+        throw new Error(msg);
       }
       onAdd({ ...newShelter, id: Date.now() }); // Temporary id
       onBack();

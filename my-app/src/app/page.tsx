@@ -44,7 +44,7 @@ export default function Home() {
     }
   }, []);
 
-  const { shelters, loading, error } = useShelters();
+  const { shelters, loading, error, refetch } = useShelters();
 
   useEffect(() => {
     if (!mapContainer.current || !shelters.length) return;
@@ -127,10 +127,9 @@ export default function Home() {
     }
   }, [currentPage, mapLoaded]);
 
-  const handleAddShelter = (newShelter: Shelter) => {
-    // Optionally, POST to your API to persist the new shelter
-    // For now, just update local state
-    // setShelters([...shelters, newShelter]);
+  const handleAddShelter = async (newShelter: Shelter) => {
+    // After successful POST handled in AddShelterPage, refresh list
+    await refetch();
     setCurrentPage("home");
   };
 
