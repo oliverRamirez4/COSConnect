@@ -9,6 +9,7 @@ export default function ShelterAdminPage() {
   const [selectedId, setSelectedId] = React.useState<number | null>(null);
   const [formState, setFormState] = React.useState<Partial<Shelter> | null>(null);
   const [saving, setSaving] = React.useState(false);
+  const [isEditing, setIsEditing] = React.useState(false);
 
   React.useEffect(() => {
     setLocalShelters(shelters);
@@ -66,6 +67,7 @@ export default function ShelterAdminPage() {
         prev.map((shelter) => (shelter.id === updatedShelter.id ? updatedShelter : shelter))
       );
       setFormState(updatedShelter);
+      setIsEditing(false);
       alert("Shelter details saved!");
     } catch (error: any) {
       alert(`Error saving shelter: ${error.message ?? error}`);
@@ -74,11 +76,47 @@ export default function ShelterAdminPage() {
     }
   };
 
+  const mutateBeds = async (delta: number) => {
+    if (!selectedShelter) return;
+    const next = Math.max(0, (selectedShelter.numopenbeds ?? 0) + delta);
+    const payload: Partial<Shelter> = { ...selectedShelter, numopenbeds: next };
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/shelters/${selectedShelter.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const { error: message } = await res.json();
+        throw new Error(message ?? `Request failed (${res.status})`);
+      }
+      const updated: Shelter = await res.json();
+      setLocalShelters((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+    } catch (err: any) {
+      alert(`Error updating beds: ${err.message ?? err}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 py-8 dark:from-slate-950 dark:to-slate-900">
-      <h1 className="mb-4 text-4xl font-bold tracking-tight text-transparent bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text">
-        Shelter Admin Portal
-      </h1>
+      <div className="mb-4 flex w-full max-w-xl items-center justify-between">
+        <h1 className="text-4xl font-bold tracking-tight text-transparent bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text">
+          Shelter Admin Portal
+        </h1>
+        <a
+          href="/"
+          className="inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-slate-800 to-slate-700 px-4 py-2 text-sm font-semibold text-white shadow-sm ring-1 ring-slate-900/10 transition hover:from-slate-700 hover:to-slate-600 hover:shadow-md dark:from-zinc-800 dark:to-zinc-700 dark:ring-zinc-700"
+          aria-label="Return to Home"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
+            <path d="M11.47 2.47a.75.75 0 0 1 1.06 0l8 8a.75.75 0 1 1-1.06 1.06L19.5 10.56V19.5A2.25 2.25 0 0 1 17.25 21.75h-10.5A2.25 2.25 0 0 1 4.5 19.5V10.56l-0.97 0.97a.75.75 0 1 1-1.06-1.06l8-8ZM6 9.75V19.5c0 .414.336.75.75.75h10.5c.414 0 .75-.336.75-.75V9.75l-6-6-6 6ZM9.75 12a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 9.75 12ZM14.25 12a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5a.75.75 0 0 1 .75-.75Z" />
+          </svg>
+          Home
+        </a>
+      </div>
       <p className="mb-8 text-base tracking-wide text-slate-600 dark:text-slate-400">
         Manage your shelter, track beds, and occupants here.
       </p>
@@ -107,138 +145,134 @@ export default function ShelterAdminPage() {
               </select>
             </label>
 
-            {formState && (
-              <form
-                className="space-y-4"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  handleSave();
-                }}
-              >
-                <Field
-                  label="Shelter Name"
-                  name="title"
-                  value={formState.title ?? ""}
-                  onChange={handleTextChange}
-                  required
-                />
-                <Field
-                  label="Address"
-                  name="address"
-                  value={formState.address ?? ""}
-                  onChange={handleTextChange}
-                  required
-                />
-                <Field
-                  label="Longitude"
-                  name="longitude"
-                  type="number"
-                  value={formState.longitude ?? ""}
-                  onChange={handleNumberChange}
-                  required
-                />
-                <Field
-                  label="Latitude"
-                  name="latitude"
-                  type="number"
-                  value={formState.latitude ?? ""}
-                  onChange={handleNumberChange}
-                  required
-                />
-                <Field label="Phone" name="phone" value={formState.phone ?? ""} onChange={handleTextChange} />
-                <Field
-                  label="Website"
-                  name="website"
-                  value={formState.website ?? ""}
-                  onChange={handleTextChange}
-                />
-                <Textarea
-                  label="Description"
-                  name="description"
-                  value={formState.description ?? ""}
-                  onChange={handleTextChange}
-                />
-
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <Field
-                    label="Total Beds"
-                    name="numtotbeds"
-                    type="number"
-                    min={0}
-                    value={formState.numtotbeds ?? ""}
-                    onChange={handleNumberChange}
-                    required
-                  />
-                  <Field
-                    label="Beds Available"
-                    name="numopenbeds"
-                    type="number"
-                    min={0}
-                    value={formState.numopenbeds ?? ""}
-                    onChange={handleNumberChange}
-                    required
-                  />
-                  <Field
-                    label="Age Min"
-                    name="age_min"
-                    type="number"
-                    min={0}
-                    value={formState.age_min ?? ""}
-                    onChange={handleNumberChange}
-                  />
-                  <Field
-                    label="Age Max"
-                    name="age_max"
-                    type="number"
-                    min={0}
-                    value={formState.age_max ?? ""}
-                    onChange={handleNumberChange}
-                  />
+            {selectedShelter && (
+              <div className="mt-2 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-slate-600 dark:text-slate-400">
+                    <div className="font-semibold">{selectedShelter.title}</div>
+                    <div>
+                      Open beds: {selectedShelter.numopenbeds ?? 0} / {selectedShelter.numtotbeds ?? 0}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <a
+                      href={`/admin/shelter/${selectedShelter.id}/edit`}
+                      className="rounded bg-blue-600 px-3 py-2 text-white hover:bg-blue-700"
+                    >
+                      Edit Shelter Details
+                    </a>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <Toggle label="Families" name="families" checked={!!formState.families} onChange={handleCheckboxChange} />
-                  <Toggle
-                    label="Single Women"
-                    name="single_women"
-                    checked={!!formState.single_women}
-                    onChange={handleCheckboxChange}
-                  />
-                  <Toggle
-                    label="Single Men"
-                    name="single_men"
-                    checked={!!formState.single_men}
-                    onChange={handleCheckboxChange}
-                  />
-                  <Toggle
-                    label="Domestic Violence"
-                    name="domestic_violence"
-                    checked={!!formState.domestic_violence}
-                    onChange={handleCheckboxChange}
-                  />
-                  <Toggle
-                    label="Pet Friendly"
-                    name="pet_friendly"
-                    checked={!!formState.pet_friendly}
-                    onChange={handleCheckboxChange}
-                  />
-                  <Toggle
-                    label="Wheelchair Accessible"
-                    name="wheelchair_accessible"
-                    checked={!!formState.wheelchair_accessible}
-                    onChange={handleCheckboxChange}
-                  />
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    className="rounded bg-emerald-700 px-3 py-2 text-white hover:bg-emerald-800 disabled:opacity-60"
+                    onClick={() => mutateBeds(-1)}
+                    disabled={saving || (selectedShelter.numopenbeds ?? 0) <= 0}
+                  >
+                    Assign Bed
+                  </button>
+                  <button
+                    className="rounded bg-teal-600 px-3 py-2 text-white hover:bg-teal-700 disabled:opacity-60"
+                    onClick={() => mutateBeds(+1)}
+                    disabled={
+                      saving || (selectedShelter.numopenbeds ?? 0) >= (selectedShelter.numtotbeds ?? 0)
+                    }
+                  >
+                    Open Bed
+                  </button>
                 </div>
-
-                <button
-                  type="submit"
-                  className="mt-4 rounded bg-emerald-700 px-4 py-2 font-semibold text-white transition hover:bg-emerald-800 disabled:opacity-60"
-                  disabled={saving}
-                >
-                  {saving ? "Saving..." : "Save Changes"}
-                </button>
-              </form>
+              </div>
             )}
+
+            <Modal open={isEditing} onClose={() => setIsEditing(false)}>
+              {formState && (
+                <form
+                  className="space-y-4"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    handleSave();
+                  }}
+                >
+                  <Field
+                    label="Shelter Name"
+                    name="title"
+                    value={formState.title ?? ""}
+                    onChange={handleTextChange}
+                    required
+                  />
+                  <Field
+                    label="Address"
+                    name="address"
+                    value={formState.address ?? ""}
+                    onChange={handleTextChange}
+                    required
+                  />
+                  <Field
+                    label="Longitude"
+                    name="longitude"
+                    type="number"
+                    value={formState.longitude ?? ""}
+                    onChange={handleNumberChange}
+                    required
+                  />
+                  <Field
+                    label="Latitude"
+                    name="latitude"
+                    type="number"
+                    value={formState.latitude ?? ""}
+                    onChange={handleNumberChange}
+                    required
+                  />
+                  <Field label="Phone" name="phone" value={formState.phone ?? ""} onChange={handleTextChange} />
+                  <Field label="Website" name="website" value={formState.website ?? ""} onChange={handleTextChange} />
+                  <Textarea label="Description" name="description" value={formState.description ?? ""} onChange={handleTextChange} />
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <Field
+                      label="Total Beds"
+                      name="numtotbeds"
+                      type="number"
+                      min={0}
+                      value={formState.numtotbeds ?? ""}
+                      onChange={handleNumberChange}
+                      required
+                    />
+                    <Field
+                      label="Beds Available"
+                      name="numopenbeds"
+                      type="number"
+                      min={0}
+                      value={formState.numopenbeds ?? ""}
+                      onChange={handleNumberChange}
+                      required
+                    />
+                    <Field label="Age Min" name="age_min" type="number" min={0} value={formState.age_min ?? ""} onChange={handleNumberChange} />
+                    <Field label="Age Max" name="age_max" type="number" min={0} value={formState.age_max ?? ""} onChange={handleNumberChange} />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <Toggle label="Families" name="families" checked={!!formState.families} onChange={handleCheckboxChange} />
+                    <Toggle label="Single Women" name="single_women" checked={!!formState.single_women} onChange={handleCheckboxChange} />
+                    <Toggle label="Single Men" name="single_men" checked={!!formState.single_men} onChange={handleCheckboxChange} />
+                    <Toggle label="Domestic Violence" name="domestic_violence" checked={!!formState.domestic_violence} onChange={handleCheckboxChange} />
+                    <Toggle label="Pet Friendly" name="pet_friendly" checked={!!formState.pet_friendly} onChange={handleCheckboxChange} />
+                    <Toggle label="Wheelchair Accessible" name="wheelchair_accessible" checked={!!formState.wheelchair_accessible} onChange={handleCheckboxChange} />
+                  </div>
+
+                  <div className="flex justify-end gap-2">
+                    <button type="button" className="rounded px-4 py-2 text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-zinc-800" onClick={() => setIsEditing(false)}>Cancel</button>
+                    <button
+                      type="submit"
+                      className="rounded bg-emerald-700 px-4 py-2 font-semibold text-white transition hover:bg-emerald-800 disabled:opacity-60"
+                      disabled={saving}
+                    >
+                      {saving ? "Saving..." : "Save Changes"}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </Modal>
           </>
         )}
       </div>
@@ -285,5 +319,21 @@ function Toggle({ label, ...props }: ToggleProps) {
       <input type="checkbox" {...props} />
       {label}
     </label>
+  );
+}
+
+function Modal({ open, onClose, children }: { open: boolean; onClose: () => void; children: React.ReactNode }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-2xl rounded-lg border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="flex items-center justify-between pb-3">
+          <h2 className="text-lg font-semibold">Edit Shelter Details</h2>
+          <button className="rounded px-3 py-1 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-zinc-800" onClick={onClose}>Close</button>
+        </div>
+        {children}
+      </div>
+    </div>
   );
 }
