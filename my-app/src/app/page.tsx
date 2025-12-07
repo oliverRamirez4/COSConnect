@@ -16,18 +16,50 @@ function PinSidebar({
 }) {
   if (selectedShelter) {
     return (
-      <div className="w-80 max-w-xs h-[600px] mr-6 bg-white dark:bg-zinc-900 rounded-lg shadow-lg border border-zinc-200 dark:border-zinc-800 p-6 flex flex-col justify-center">
-        <button
-          className="mb-4 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 flex items-center gap-2"
-          onClick={onBack}
-        >
-          <span className="text-2xl">←</span> <span>Back to list</span>
-        </button>
-        <h2 className="text-xl font-bold mb-2">{selectedShelter.title}</h2>
-        <p className="text-zinc-700 dark:text-zinc-200 mb-2">{selectedShelter.description}</p>
-        <div className="text-base text-zinc-700 dark:text-zinc-200">
-          <span className="font-semibold">Total Beds:</span> {selectedShelter.numTotBeds}<br />
-          <span className="font-semibold">Beds Occupied:</span> {selectedShelter.numOpenBeds}
+      <div className="w-80 max-w-xs h-[600px] mr-6 bg-white dark:bg-zinc-900 rounded-lg shadow-lg border border-zinc-200 dark:border-zinc-800 p-0 flex flex-col overflow-hidden">
+        {/* Header with back button and title */}
+        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-4 flex items-center justify-between">
+          <button
+            className="text-white hover:bg-emerald-700 p-2 rounded transition"
+            onClick={onBack}
+            title="Back to list"
+          >
+            <span className="text-2xl">←</span>
+          </button>
+          <h2 className="text-lg font-bold flex-1 text-center">{selectedShelter.title}</h2>
+          <div className="w-10"></div> {/* Spacer for alignment */}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+          <div>
+            <p className="text-zinc-700 dark:text-zinc-200">{selectedShelter.description}</p>
+          </div>
+
+          <div className="border-t border-zinc-200 dark:border-zinc-700 pt-4">
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="font-semibold text-zinc-900 dark:text-zinc-100">Address:</span>
+                <span className="text-zinc-700 dark:text-zinc-300 text-right text-sm">{selectedShelter.address}</span>
+              </div>
+              <div className="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-lg">
+                <div className="flex justify-between mb-2">
+                  <span className="font-semibold text-emerald-900 dark:text-emerald-300">Total Beds:</span>
+                  <span className="text-emerald-900 dark:text-emerald-300 font-bold">{selectedShelter.numTotBeds}</span>
+                </div>
+                <div className="flex justify-between mb-2">
+                  <span className="font-semibold text-emerald-900 dark:text-emerald-300">Beds Available:</span>
+                  <span className="text-emerald-900 dark:text-emerald-300 font-bold">{selectedShelter.numTotBeds - selectedShelter.numOpenBeds}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-semibold text-emerald-900 dark:text-emerald-300">Occupancy:</span>
+                  <span className="text-emerald-900 dark:text-emerald-300 font-bold">
+                    {Math.round((selectedShelter.numOpenBeds / selectedShelter.numTotBeds) * 100)}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -199,10 +231,11 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen items-center justify-center bg-zinc-50 dark:bg-black py-8">
-      <h1 className="text-4xl font-bold mb-8 text-zinc-900 dark:text-zinc-100 tracking-tight">COS Connect</h1>
+    <div className="flex flex-col min-h-screen items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800 py-8">
+      <h1 className="text-5xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600 tracking-tight">COS Connect</h1>
+      <p className="text-gray-600 dark:text-gray-400 mb-8 text-sm tracking-wide">Homeless Shelter Resource Guide</p>
       <AddShelterButton onClick={() => setCurrentPage("add")} />
-      <div className="flex items-center justify-center w-full">
+      <div className="flex items-center justify-center w-full gap-6 px-4">
         <PinSidebar
           shelters={shelters}
           selectedShelter={selectedShelter}
@@ -211,7 +244,7 @@ export default function Home() {
         />
         <div
           ref={mapContainer}
-          className="w-full max-w-3xl h-[600px] rounded-lg shadow-lg border border-zinc-200 dark:border-zinc-800"
+          className="w-full max-w-3xl h-[600px] rounded-lg shadow-xl border border-slate-200 dark:border-slate-700"
           style={{ minHeight: 400 }}
         />
       </div>

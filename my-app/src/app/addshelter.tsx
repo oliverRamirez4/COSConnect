@@ -79,9 +79,9 @@ function AddShelterPage({ onBack, onAdd }: AddShelterPageProps) {
   };
 
   return (
-    <div className="flex flex-col min-h-screen items-center justify-center bg-zinc-50 dark:bg-black py-8">
-      <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-xl p-8 w-full max-w-2xl mx-4">
-        <h1 className="text-3xl font-bold mb-6 text-zinc-900 dark:text-zinc-100">Add New Shelter</h1>
+    <div className="flex flex-col min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 py-8">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl p-8 w-full max-w-2xl mx-4 border border-slate-200 dark:border-slate-700">
+        <h1 className="text-3xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">Add New Shelter</h1>
         
         <div className="space-y-4">
           <div>
@@ -183,13 +183,13 @@ function AddShelterPage({ onBack, onAdd }: AddShelterPageProps) {
           <div className="flex gap-4 pt-4">
             <button
               onClick={handleSubmit}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg shadow-md transition-colors"
+              className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-medium py-3 px-6 rounded-lg shadow-lg transition-all"
             >
               Add Shelter
             </button>
             <button
               onClick={onBack}
-              className="flex-1 bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-zinc-900 dark:text-zinc-100 font-medium py-3 px-6 rounded-lg shadow-md transition-colors"
+              className="flex-1 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 font-medium py-3 px-6 rounded-lg shadow-md transition-colors"
             >
               Cancel
             </button>
@@ -208,7 +208,7 @@ export function AddShelterButton({ onClick }: AddShelterButtonProps) {
   return (
     <button
       onClick={onClick}
-      className="mb-4 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg shadow-md transition-colors"
+      className="mb-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-medium py-2 px-6 rounded-lg shadow-lg transition-all"
     >
       + Add New Shelter
     </button>
