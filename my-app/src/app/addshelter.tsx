@@ -6,6 +6,7 @@ export type Shelter = {
   description: string;
   numTotBeds: number;
   numOpenBeds: number;
+  address: string;
 };
 
 interface AddShelterPageProps {
@@ -70,7 +71,8 @@ function AddShelterPage({ onBack, onAdd }: AddShelterPageProps) {
       title: formData.title,
       description: formData.description,
       numTotBeds: parseInt(formData.numTotBeds),
-      numOpenBeds: parseInt(formData.numOpenBeds)
+      numOpenBeds: parseInt(formData.numOpenBeds),
+      address: formData.address
     };
     onAdd(newShelter);
     onBack();
