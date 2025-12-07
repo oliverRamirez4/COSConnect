@@ -96,6 +96,37 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, shelters, userLocation]);
 
+  // Clean up map instance when leaving the Home page to prevent detached container rendering issues
+  useEffect(() => {
+    if (currentPage !== "home" && mapRef.current) {
+      try {
+        // Remove any existing markers
+        markersRef.current.forEach((m) => {
+          try { m.remove(); } catch {}
+        });
+        markersRef.current = [];
+        // Remove the map instance
+        mapRef.current.remove();
+      } catch (e) {
+        console.warn("Error removing map:", e);
+      } finally {
+        mapRef.current = null;
+        setMapLoaded(false);
+      }
+    }
+  }, [currentPage]);
+
+  // Ensure map resizes correctly when returning to Home and the container becomes visible
+  useEffect(() => {
+    if (currentPage === "home" && mapRef.current && mapLoaded) {
+      // Give the layout a tick to settle before resizing
+      const id = requestAnimationFrame(() => {
+        try { mapRef.current.resize(); } catch {}
+      });
+      return () => cancelAnimationFrame(id);
+    }
+  }, [currentPage, mapLoaded]);
+
   const handleAddShelter = (newShelter: Shelter) => {
     // Optionally, POST to your API to persist the new shelter
     // For now, just update local state
