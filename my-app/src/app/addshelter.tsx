@@ -363,13 +363,19 @@ function AddShelterPage({ onBack, onAdd }: AddShelterPageProps) {
 
 interface AddShelterButtonProps {
   onClick: () => void;
+  className?: string;
+  style?: React.CSSProperties;
 }
 
-export function AddShelterButton({ onClick }: AddShelterButtonProps) {
+export function AddShelterButton({ onClick, className, style }: AddShelterButtonProps) {
   return (
     <button
       onClick={onClick}
-      className="mb-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-medium py-2 px-6 rounded-lg shadow-lg transition-all"
+      className={
+        className ||
+        "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-medium py-2 px-6 rounded-lg shadow-lg transition-all"
+      }
+      style={style}
     >
       + Register a Shelter
     </button>

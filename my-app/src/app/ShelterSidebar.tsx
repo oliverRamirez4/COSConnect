@@ -7,30 +7,86 @@ interface ShelterSidebarProps {
   onSelect: (shelter: Shelter) => void;
   onBack: () => void;
   userLocation?: { lat: number; lng: number } | null;
+  filters?: {
+    searchText?: string;
+    families?: boolean;
+    single_women?: boolean;
+    single_men?: boolean;
+    domestic_violence?: boolean;
+    pet_friendly?: boolean;
+    wheelchair_accessible?: boolean;
+    age_min?: string | number;
+    age_max?: string | number;
+    beds_available_only?: boolean;
+  };
 }
 
-export default function ShelterSidebar({ shelters, selectedShelter, onSelect, onBack, userLocation }: ShelterSidebarProps) {
+export default function ShelterSidebar({ shelters, selectedShelter, onSelect, onBack, userLocation, filters }: ShelterSidebarProps) {
+  // Determine match status per shelter (do not remove non-matches)
+  const shelterWithMatch = React.useMemo(() => {
+    const f = filters || {};
+    const search = (f.searchText || "").trim().toLowerCase();
+    const minAge = f.age_min === "" || f.age_min === undefined ? undefined : Number(f.age_min);
+    const maxAge = f.age_max === "" || f.age_max === undefined ? undefined : Number(f.age_max);
+    const matches = (s: Shelter) => {
+      // text search on title or address
+      if (search) {
+        const hay = `${s.title} ${s.address}`.toLowerCase();
+        if (!hay.includes(search)) return false;
+      }
+      // boolean filters: if true, require shelter to support
+      if (f.families && !s.families) return false;
+      if (f.single_women && !s.single_women) return false;
+      if (f.single_men && !s.single_men) return false;
+      if (f.domestic_violence && !s.domestic_violence) return false;
+      if (f.pet_friendly && !s.pet_friendly) return false;
+      if (f.wheelchair_accessible && !s.wheelchair_accessible) return false;
+      // age range: match if shelter age range intersects user provided range
+      if (minAge !== undefined) {
+        if (s.age_min !== undefined && minAge < s.age_min) return false;
+        if (s.age_max !== undefined && minAge > s.age_max) return false;
+      }
+      if (maxAge !== undefined) {
+        if (s.age_min !== undefined && maxAge < s.age_min) return false;
+        if (s.age_max !== undefined && maxAge > s.age_max) return false;
+      }
+      if (f.beds_available_only && (s.numopenbeds ?? 0) <= 0) return false;
+      return true;
+    };
+    return shelters.map((s) => ({ shelter: s, matches: matches(s) }));
+  }, [shelters, filters]);
   // Sort shelters by proximity if userLocation is available
   const sortedShelters = React.useMemo(() => {
-    if (!userLocation) return shelters;
-    function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
-      // Haversine formula
-      const R = 6371; // km
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;
+    // Order: matching first, then non-matching; within each, sort by distance (or keep order if no location)
+    let list = shelterWithMatch.slice();
+    if (userLocation) {
+      function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+        // Haversine formula
+        const R = 6371; // km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+      }
+      list.sort((A, B) => {
+        // matches first
+        if (A.matches !== B.matches) return A.matches ? -1 : 1;
+        const a = A.shelter;
+        const b = B.shelter;
+        const da = getDistance(userLocation.lat, userLocation.lng, a.latitude, a.longitude);
+        const db = getDistance(userLocation.lat, userLocation.lng, b.latitude, b.longitude);
+        return da - db;
+      });
+    } else {
+      // Without location, still put matches first, preserve original order otherwise
+      list.sort((A, B) => (A.matches === B.matches ? 0 : A.matches ? -1 : 1));
     }
-    return [...shelters].sort((a, b) => {
-      const da = getDistance(userLocation.lat, userLocation.lng, a.latitude, a.longitude);
-      const db = getDistance(userLocation.lat, userLocation.lng, b.latitude, b.longitude);
-      return da - db;
-    });
-  }, [shelters, userLocation]);
+    return list;
+  }, [shelterWithMatch, userLocation]);
   if (selectedShelter) {
     return (
       <div className="w-80 max-w-xs h-[600px] mr-6 bg-white dark:bg-zinc-900 rounded-lg shadow-lg border border-zinc-200 dark:border-zinc-800 p-0 flex flex-col overflow-hidden">
@@ -141,7 +197,7 @@ export default function ShelterSidebar({ shelters, selectedShelter, onSelect, on
     <div className="w-80 max-w-xs h-[600px] mr-6 bg-white dark:bg-zinc-900 rounded-lg shadow-lg border border-zinc-200 dark:border-zinc-800 p-0 flex flex-col">
       <h2 className="text-lg font-semibold px-6 pt-6 pb-2">Shelters</h2>
       <div className="flex-1 overflow-y-auto px-2 pb-4">
-        {sortedShelters.map((shelter, idx) => {
+        {sortedShelters.map(({ shelter, matches }, idx) => {
           let distanceStr = null;
           if (userLocation) {
             const R = 3958.8; // miles
@@ -158,7 +214,11 @@ export default function ShelterSidebar({ shelters, selectedShelter, onSelect, on
           return (
             <button
               key={idx}
-              className="w-full text-left px-4 py-3 mb-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition border border-transparent hover:border-zinc-300 dark:hover:border-zinc-700"
+              className={`w-full text-left px-4 py-3 mb-2 rounded-lg transition border ${
+                matches
+                  ? "hover:bg-zinc-100 dark:hover:bg-zinc-800 border-transparent hover:border-zinc-300 dark:hover:border-zinc-700"
+                  : "bg-zinc-50 dark:bg-zinc-800/40 text-zinc-400 dark:text-zinc-500 border-zinc-200 dark:border-zinc-700"
+              }`}
               onClick={() => onSelect(shelter)}
             >
               <div className="font-bold text-zinc-900 dark:text-zinc-100">{shelter.title}</div>
@@ -168,7 +228,7 @@ export default function ShelterSidebar({ shelters, selectedShelter, onSelect, on
                     {distanceStr}
                   </span>
                 )}
-                <span title="Beds available" className="inline-block bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 px-2 py-0.5 rounded-full text-xs font-semibold">
+                <span title="Beds available" className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${matches ? "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500"}`}>
                   Beds: {shelter.numopenbeds ?? 0}
                 </span>
               </div>
