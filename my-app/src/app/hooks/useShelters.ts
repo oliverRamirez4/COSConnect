@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Shelter } from "../types";
+import { withBase } from "../../lib/paths";
 
 export function useShelters() {
   const [shelters, setShelters] = useState<Shelter[]>([]);
@@ -10,7 +11,7 @@ export function useShelters() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/shelters');
+      const res = await fetch(withBase('/api/shelters'));
       if (!res.ok) throw new Error('Failed to fetch shelters');
       const data = await res.json();
       setShelters(data);

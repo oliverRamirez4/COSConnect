@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Shelter } from "./types";
+import { withBase } from "../lib/paths";
 
 interface AddShelterPageProps {
   onBack: () => void;
@@ -112,7 +113,7 @@ function AddShelterPage({ onBack, onAdd }: AddShelterPageProps) {
         website: newShelter.website,
       };
 
-      const res = await fetch("/api/shelters", {
+      const res = await fetch(withBase("/api/shelters"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)

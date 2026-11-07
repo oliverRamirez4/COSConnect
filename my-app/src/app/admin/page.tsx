@@ -2,6 +2,7 @@
 import React from "react";
 import { useShelters } from "../hooks/useShelters";
 import { Shelter } from "../types";
+import { withBase } from "../../lib/paths";
 
 export default function ShelterAdminPage() {
   const { shelters, loading, error } = useShelters();
@@ -62,7 +63,7 @@ export default function ShelterAdminPage() {
 
     setSaving(true);
     try {
-      const response = await fetch(`/api/shelters/${formState.id}`, {
+      const response = await fetch(withBase(`/api/shelters/${formState.id}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formState),
@@ -93,7 +94,7 @@ export default function ShelterAdminPage() {
     const payload: Partial<Shelter> = { ...selectedShelter, numopenbeds: next };
     setSaving(true);
     try {
-      const res = await fetch(`/api/shelters/${selectedShelter.id}`, {
+      const res = await fetch(withBase(`/api/shelters/${selectedShelter.id}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -131,7 +132,7 @@ export default function ShelterAdminPage() {
     setIsAssigning(false);
     // Persist assignment
     try {
-      const res = await fetch(`/api/bed-assignments`, {
+      const res = await fetch(withBase(`/api/bed-assignments`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -164,7 +165,7 @@ export default function ShelterAdminPage() {
     if (!selectedOccupant || !current.includes(selectedOccupant)) return;
     setIsReleasing(false);
     try {
-      const res = await fetch(`/api/bed-assignments`, {
+      const res = await fetch(withBase(`/api/bed-assignments`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ shelterId: selectedShelter.id, personName: selectedOccupant }),
@@ -189,7 +190,7 @@ export default function ShelterAdminPage() {
     const load = async () => {
       if (!selectedShelter) return;
       try {
-        const res = await fetch(`/api/bed-assignments?shelterId=${selectedShelter.id}`);
+        const res = await fetch(withBase(`/api/bed-assignments?shelterId=${selectedShelter.id}`));
         if (!res.ok) return;
         const data: { full_name: string }[] = await res.json();
         setOccupantsByShelter((prev) => ({
@@ -209,7 +210,7 @@ export default function ShelterAdminPage() {
     const timeout = setTimeout(async () => {
       if (!isAssigning) return;
       try {
-        const res = await fetch(`/api/persons?q=${encodeURIComponent(personSearch)}`, {
+        const res = await fetch(withBase(`/api/persons?q=${encodeURIComponent(personSearch)}`), {
           signal: controller.signal,
         });
         if (!res.ok) return;
@@ -230,7 +231,7 @@ export default function ShelterAdminPage() {
           Shelter Admin Portal
         </h1>
         <a
-          href="/"
+          href={withBase("/")}
           className="inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-slate-800 to-slate-700 px-4 py-2 text-sm font-semibold text-white shadow-sm ring-1 ring-slate-900/10 transition hover:from-slate-700 hover:to-slate-600 hover:shadow-md dark:from-zinc-800 dark:to-zinc-700 dark:ring-zinc-700"
           aria-label="Return to Home"
         >
@@ -387,7 +388,7 @@ export default function ShelterAdminPage() {
                           onClick={async () => {
                             if (!newPerson.full_name.trim()) { alert('Full name required'); return; }
                             try {
-                              const res = await fetch('/api/persons', {
+                              const res = await fetch(withBase('/api/persons'), {
                                 method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newPerson),
                               });
                               if (!res.ok) {

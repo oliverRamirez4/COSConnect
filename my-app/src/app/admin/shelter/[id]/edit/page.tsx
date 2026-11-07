@@ -2,6 +2,7 @@
 import React from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Shelter } from "@/app/types";
+import { withBase } from "@/lib/paths";
 
 export default function EditShelterPage() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export default function EditShelterPage() {
         return;
       }
       try {
-        const res = await fetch(`/api/shelters/${shelterId}`);
+        const res = await fetch(withBase(`/api/shelters/${shelterId}`));
         if (!res.ok) throw new Error(`Failed to load shelter (${res.status})`);
         const data: Shelter = await res.json();
         setFormState({ ...data });
@@ -62,7 +63,7 @@ export default function EditShelterPage() {
     if (!formState?.id) return;
     setSaving(true);
     try {
-      const response = await fetch(`/api/shelters/${formState.id}`, {
+      const response = await fetch(withBase(`/api/shelters/${formState.id}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formState),

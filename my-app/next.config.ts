@@ -1,8 +1,9 @@
 import type { NextConfig } from "next";
+import { assetPrefix, basePath } from "./src/lib/paths";
 
 const nextConfig: NextConfig = {
-  basePath: "/apps/shelter-connect",
-  assetPrefix: "/apps/shelter-connect-static",
+  basePath,
+  assetPrefix,
 };
 
 export default nextConfig;
