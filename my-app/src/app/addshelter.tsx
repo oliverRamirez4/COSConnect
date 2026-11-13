@@ -131,9 +131,9 @@ function AddShelterPage({ onBack, onAdd }: AddShelterPageProps) {
   };
 
   return (
-    <div className="flex flex-col min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 py-8">
-      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl p-8 w-full max-w-2xl mx-4 border border-slate-200 dark:border-slate-700">
-        <h1 className="text-3xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">Register New Shelter</h1>
+    <div className="min-h-screen bg-stone-100 py-8 text-stone-900">
+      <div className="mx-auto w-full max-w-2xl rounded-lg border border-stone-200 bg-white p-6 sm:p-8">
+        <h1 className="mb-6 text-xl font-semibold">Register a shelter</h1>
         
         <div className="space-y-4">
           {/* Shelter Name */}
@@ -294,8 +294,9 @@ function AddShelterPage({ onBack, onAdd }: AddShelterPageProps) {
             )}
           </div>
 
-          {/* Boolean fields */}
-          <div className="grid grid-cols-2 gap-4">
+          <fieldset>
+            <legend className="mb-2 text-sm font-medium text-stone-700">Who they serve</legend>
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="inline-flex items-center">
                 <input
@@ -363,12 +364,13 @@ function AddShelterPage({ onBack, onAdd }: AddShelterPageProps) {
               </label>
             </div>
           </div>
+          </fieldset>
 
           {/* Buttons */}
           <div className="flex gap-4 pt-4">
             <button
               onClick={handleSubmit}
-              className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-medium py-3 px-6 rounded-lg shadow-lg transition-all"
+              className="flex-1 rounded-md bg-emerald-800 py-3 px-6 font-medium text-white hover:bg-emerald-900"
             >
               Add Shelter
             </button>

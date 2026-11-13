@@ -225,14 +225,16 @@ export default function ShelterAdminPage() {
   }, [personSearch, isAssigning]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-10 dark:from-slate-950 dark:to-slate-900">
-      <div className="mx-auto mb-6 flex w-full max-w-5xl items-center justify-between px-4">
-        <h1 className="text-4xl font-bold tracking-tight text-transparent bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text">
-          Shelter Admin Portal
-        </h1>
+    <div className="min-h-screen bg-stone-100 text-stone-900">
+      <header className="border-b border-stone-200 bg-white">
+      <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-4">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">Shelter admin</h1>
+          <p className="text-sm text-stone-500">Manage beds and occupants</p>
+        </div>
         <a
           href={withBase("/")}
-          className="inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-slate-800 to-slate-700 px-4 py-2 text-sm font-semibold text-white shadow-sm ring-1 ring-slate-900/10 transition hover:from-slate-700 hover:to-slate-600 hover:shadow-md dark:from-zinc-800 dark:to-zinc-700 dark:ring-zinc-700"
+          className="inline-flex items-center gap-2 rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-800 hover:bg-stone-50"
           aria-label="Return to Home"
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
@@ -241,10 +243,8 @@ export default function ShelterAdminPage() {
           Home
         </a>
       </div>
-      <div className="mx-auto w-full max-w-5xl px-4">
-        <p className="mb-6 text-base tracking-wide text-slate-600 dark:text-slate-400">
-          Manage your shelter, track beds, and occupants here.
-        </p>
+      </header>
+      <div className="mx-auto w-full max-w-5xl px-4 py-6">
 
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Left column: shelter selection and actions */}
@@ -300,7 +300,7 @@ export default function ShelterAdminPage() {
                             Open Bed
                           </button>
                           <a
-                            href={`/admin/shelter/${selectedShelter.id}/edit`}
+                            href={withBase(`/admin/shelter/${selectedShelter.id}/edit`)}
                             className="rounded bg-blue-600 px-3 py-2 text-white hover:bg-blue-700"
                           >
                             Edit Details

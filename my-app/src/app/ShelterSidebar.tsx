@@ -89,18 +89,16 @@ export default function ShelterSidebar({ shelters, selectedShelter, onSelect, on
   }, [shelterWithMatch, userLocation]);
   if (selectedShelter) {
     return (
-      <div className="w-80 max-w-xs h-[600px] mr-6 bg-white dark:bg-zinc-900 rounded-lg shadow-lg border border-zinc-200 dark:border-zinc-800 p-0 flex flex-col overflow-hidden">
-        {/* Header with back button and title */}
-        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-4 flex items-center justify-between">
+      <div className="flex h-[28rem] w-full flex-col overflow-hidden rounded-lg border border-stone-200 bg-white md:h-[36rem] md:w-80">
+        <div className="flex items-center gap-2 border-b border-stone-200 px-3 py-3">
           <button
-            className="text-white hover:bg-emerald-700 p-2 rounded transition"
+            className="rounded-md px-2 py-1 text-sm text-stone-700 hover:bg-stone-100"
             onClick={onBack}
             title="Back to list"
           >
-            <span className="text-2xl">←</span>
+            Back
           </button>
-          <h2 className="text-lg font-bold flex-1 text-center">{selectedShelter.title}</h2>
-          <div className="w-10"></div> {/* Spacer for alignment */}
+          <h2 className="min-w-0 flex-1 text-base font-semibold">{selectedShelter.title}</h2>
         </div>
 
         {/* Content */}
@@ -194,8 +192,8 @@ export default function ShelterSidebar({ shelters, selectedShelter, onSelect, on
     );
   }
   return (
-    <div className="w-80 max-w-xs h-[600px] mr-6 bg-white dark:bg-zinc-900 rounded-lg shadow-lg border border-zinc-200 dark:border-zinc-800 p-0 flex flex-col">
-      <h2 className="text-lg font-semibold px-6 pt-6 pb-2">Shelters</h2>
+    <div className="flex h-[28rem] w-full flex-col overflow-hidden rounded-lg border border-stone-200 bg-white md:h-[36rem] md:w-80">
+      <h2 className="border-b border-stone-200 px-4 py-3 text-base font-semibold">Shelters</h2>
       <div className="flex-1 overflow-y-auto px-2 pb-4">
         {sortedShelters.map(({ shelter, matches }, idx) => {
           let distanceStr = null;

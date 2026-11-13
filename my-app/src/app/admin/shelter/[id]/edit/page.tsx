@@ -87,7 +87,7 @@ export default function EditShelterPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 py-8 dark:from-slate-950 dark:to-slate-900">
+    <div className="flex min-h-screen flex-col items-center bg-stone-100 py-8 text-stone-900">
       {savedToast && (
         <div className="fixed top-4 right-4 z-50 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-emerald-800 shadow-md dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
           Shelter updated successfully

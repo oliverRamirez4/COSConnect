@@ -1,11 +1,44 @@
 "use client";
-import React, { useRef, useState, useEffect, useMemo } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import "mapbox-gl/dist/mapbox-gl.css";
 import AddShelterPage, { AddShelterButton} from './addshelter';
 import { useShelters } from './hooks/useShelters';
 import ShelterSidebar from "./ShelterSidebar";
 import { Shelter } from "./types";
+import { withBase } from "../lib/paths";
 
+const SHELTER_AREA: [number, number] = [-104.8214, 38.8339];
+
+const SERVICE_FILTERS = [
+  ["families", "Families"],
+  ["single_women", "Single women"],
+  ["single_men", "Single men"],
+  ["domestic_violence", "DV support"],
+  ["pet_friendly", "Pets"],
+  ["wheelchair_accessible", "Wheelchair"],
+  ["beds_available_only", "Open beds"],
+] as const;
+
+function shelterBounds(shelters: Shelter[]): [[number, number], [number, number]] | null {
+  const points = shelters.filter(
+    (shelter) => Number.isFinite(shelter.longitude) && Number.isFinite(shelter.latitude),
+  );
+  if (points.length === 0) return null;
+  let minLng = points[0].longitude;
+  let maxLng = points[0].longitude;
+  let minLat = points[0].latitude;
+  let maxLat = points[0].latitude;
+  for (const shelter of points) {
+    minLng = Math.min(minLng, shelter.longitude);
+    maxLng = Math.max(maxLng, shelter.longitude);
+    minLat = Math.min(minLat, shelter.latitude);
+    maxLat = Math.max(maxLat, shelter.latitude);
+  }
+  return [
+    [minLng, minLat],
+    [maxLng, maxLat],
+  ];
+}
 
 export default function Home() {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -56,17 +89,17 @@ export default function Home() {
       const map = new mapboxgl.default.Map({
         container: mapContainer.current!,
         style: "mapbox://styles/mapbox/streets-v11",
-        center: userLocation ? [userLocation.lng, userLocation.lat] : [-104.8214, 38.8339],
+        center: SHELTER_AREA,
         zoom: 11,
       });
       mapRef.current = map;
 
-      map.on('load', () => {
+      map.on("load", () => {
         setMapLoaded(true);
 
-        // Add shelter markers
         shelters.forEach((shelter) => {
-          const marker = new mapboxgl.default.Marker()
+          if (!Number.isFinite(shelter.longitude) || !Number.isFinite(shelter.latitude)) return;
+          const marker = new mapboxgl.default.Marker({ color: "#047857" })
             .setLngLat([shelter.longitude, shelter.latitude])
             .addTo(map);
 
@@ -77,24 +110,14 @@ export default function Home() {
           markersRef.current.push(marker);
         });
 
-        // Add user location dot
-        if (userLocation) {
-          const el = document.createElement('div');
-          el.style.width = '14px';
-          el.style.height = '14px';
-          el.style.background = '#2563eb';
-          el.style.border = '2px solid white';
-          el.style.borderRadius = '50%';
-          el.style.boxShadow = '0 0 4px #2563eb88';
-          el.title = 'Your Location';
-          new mapboxgl.default.Marker({ element: el })
-            .setLngLat([userLocation.lng, userLocation.lat])
-            .addTo(map);
+        const bounds = shelterBounds(shelters);
+        if (bounds) {
+          map.fitBounds(bounds, { padding: 56, maxZoom: 13, duration: 0 });
         }
       });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, shelters, userLocation]);
+  }, [currentPage, shelters]);
 
   // Clean up map instance when leaving the Home page to prevent detached container rendering issues
   useEffect(() => {
@@ -127,6 +150,31 @@ export default function Home() {
     }
   }, [currentPage, mapLoaded]);
 
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded || !userLocation) return;
+    let marker: { remove: () => void } | null = null;
+    let cancelled = false;
+    import("mapbox-gl").then((mapboxgl) => {
+      if (cancelled || !mapRef.current) return;
+      const el = document.createElement("div");
+      el.style.width = "12px";
+      el.style.height = "12px";
+      el.style.background = "#1d4ed8";
+      el.style.border = "2px solid white";
+      el.style.borderRadius = "50%";
+      el.title = "Your location";
+      marker = new mapboxgl.default.Marker({ element: el })
+        .setLngLat([userLocation.lng, userLocation.lat])
+        .addTo(mapRef.current);
+    });
+    return () => {
+      cancelled = true;
+      try {
+        marker?.remove();
+      } catch {}
+    };
+  }, [userLocation, mapLoaded]);
+
   const handleAddShelter = async (newShelter: Shelter) => {
     // After successful POST handled in AddShelterPage, refresh list
     await refetch();
@@ -143,88 +191,110 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 py-8">
-      <h1 className="text-5xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600 tracking-tight">COS Shelter Connect</h1>
-      <p className="text-slate-600 dark:text-slate-400 mb-8 text-sm tracking-wide">Homeless Shelter Resource Guide</p>
-          {/* Top row: buttons */}
-          <div className="w-full max-w-5xl px-4 mb-4">
-            <div className="flex gap-4 justify-center items-center">
-              <AddShelterButton
-                onClick={() => setCurrentPage("add")}
-                className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-medium px-6 rounded-lg shadow-lg transition-all h-11 flex items-center"
-              />
-              <button
-                className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-medium px-6 rounded-lg shadow-lg transition-all h-11 flex items-center"
-                onClick={() => window.location.href = '/admin'}
-              >
-                Shelter Admin
-              </button>
-            </div>
+    <div className="min-h-screen bg-stone-100 text-stone-900">
+      <header className="border-b border-stone-200 bg-white">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4">
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight">COS Shelter Connect</h1>
+            <p className="text-sm text-stone-500">Colorado Springs shelter guide</p>
           </div>
-      <div className="flex items-center justify-center w-full gap-6 px-4 flex-col md:flex-row">
-        {/* Map first on mobile */}
-        <div
-          ref={mapContainer}
-          className="w-full md:max-w-3xl h-[400px] sm:h-[500px] md:h-[600px] rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 order-1 md:order-none"
-          style={{ minHeight: 320 }}
-        />
-        {/* Sidebar below map on small screens */}
-        <ShelterSidebar
-          shelters={shelters}
-          selectedShelter={selectedShelter}
-          onSelect={setSelectedShelter}
-          onBack={() => setSelectedShelter(null)}
-          userLocation={userLocation}
-          filters={{
-            searchText,
-            families: filters.families,
-            single_women: filters.single_women,
-            single_men: filters.single_men,
-            domestic_violence: filters.domestic_violence,
-            pet_friendly: filters.pet_friendly,
-            wheelchair_accessible: filters.wheelchair_accessible,
-            age_min: filters.age_min,
-            age_max: filters.age_max,
-            beds_available_only: filters.beds_available_only,
-          }}
-        />
-      </div>
-      {/* Filters moved below map and sidebar */}
-      <div className="w-full max-w-5xl px-4 mt-4">
-        <div className="bg-white dark:bg-zinc-900 rounded-lg shadow border border-slate-200 dark:border-slate-700 p-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            {/* Search input spans full width */}
-            <div className="lg:col-span-2">
-              <input
-                type="text"
-                placeholder="Search by name or address"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm"
-              />
-            </div>
-            {/* Checkboxes */}
-            <div className="flex flex-wrap gap-2 lg:gap-3 items-center">
-              <label className="flex items-center gap-2 text-xs md:text-sm"><input type="checkbox" checked={filters.families} onChange={(e)=>setFilters(f=>({...f, families:e.target.checked}))} /> Families</label>
-              <label className="flex items-center gap-2 text-xs md:text-sm"><input type="checkbox" checked={filters.single_women} onChange={(e)=>setFilters(f=>({...f, single_women:e.target.checked}))} /> Single Women</label>
-              <label className="flex items-center gap-2 text-xs md:text-sm"><input type="checkbox" checked={filters.single_men} onChange={(e)=>setFilters(f=>({...f, single_men:e.target.checked}))} /> Single Men</label>
-              <label className="flex items-center gap-2 text-xs md:text-sm"><input type="checkbox" checked={filters.domestic_violence} onChange={(e)=>setFilters(f=>({...f, domestic_violence:e.target.checked}))} /> DV Support</label>
-              <label className="flex items-center gap-2 text-xs md:text-sm"><input type="checkbox" checked={filters.pet_friendly} onChange={(e)=>setFilters(f=>({...f, pet_friendly:e.target.checked}))} /> Pet Friendly</label>
-              <label className="flex items-center gap-2 text-xs md:text-sm"><input type="checkbox" checked={filters.wheelchair_accessible} onChange={(e)=>setFilters(f=>({...f, wheelchair_accessible:e.target.checked}))} /> Wheelchair Accessible</label>
-              <label className="flex items-center gap-2 text-xs md:text-sm"><input type="checkbox" checked={filters.beds_available_only} onChange={(e)=>setFilters(f=>({...f, beds_available_only:e.target.checked}))} /> Beds Available Only</label>
-            </div>
-            {/* Age inputs */}
-            <div className="flex flex-wrap gap-2 items-center lg:justify-end">
-              <span className="text-xs md:text-sm">Age Min</span>
-              <input type="number" min={0} value={filters.age_min} onChange={(e)=>setFilters(f=>({...f, age_min:e.target.value}))} className="w-24 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-zinc-800 px-2 py-1 text-sm" />
-              <span className="text-xs md:text-sm">Age Max</span>
-              <input type="number" min={0} value={filters.age_max} onChange={(e)=>setFilters(f=>({...f, age_max:e.target.value}))} className="w-24 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-zinc-800 px-2 py-1 text-sm" />
-            </div>
+          <div className="flex gap-2">
+            <AddShelterButton
+              onClick={() => setCurrentPage("add")}
+              className="rounded-md bg-emerald-800 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-900"
+            />
+            <a
+              href={withBase("/admin")}
+              className="rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-800 hover:bg-stone-50"
+            >
+              Shelter admin
+            </a>
           </div>
         </div>
-      </div>
-      {loading && <div>Loading shelters...</div>}
-      {error && <div className="text-red-500">{error}</div>}
+      </header>
+      <main className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-6">
+        <section className="rounded-lg border border-stone-200 bg-white p-4">
+          <label className="block text-sm font-medium text-stone-700">
+            Search
+            <input
+              type="text"
+              placeholder="Name or address"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-sm"
+            />
+          </label>
+          <div className="mt-4 grid gap-4 md:grid-cols-[1fr_auto]">
+            <fieldset>
+              <legend className="text-sm font-medium text-stone-700">Who they serve</legend>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {SERVICE_FILTERS.map(([key, label]) => (
+                  <label key={key} className="flex items-center gap-2 rounded-md border border-stone-200 px-2 py-1 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={filters[key]}
+                      onChange={(e) => setFilters((current) => ({ ...current, [key]: e.target.checked }))}
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend className="text-sm font-medium text-stone-700">Age</legend>
+              <div className="mt-2 flex gap-2">
+                <label className="text-sm text-stone-600">
+                  Min
+                  <input
+                    type="number"
+                    min={0}
+                    value={filters.age_min}
+                    onChange={(e) => setFilters((current) => ({ ...current, age_min: e.target.value }))}
+                    className="mt-1 block w-20 rounded-md border border-stone-300 px-2 py-1 text-sm"
+                  />
+                </label>
+                <label className="text-sm text-stone-600">
+                  Max
+                  <input
+                    type="number"
+                    min={0}
+                    value={filters.age_max}
+                    onChange={(e) => setFilters((current) => ({ ...current, age_max: e.target.value }))}
+                    className="mt-1 block w-20 rounded-md border border-stone-300 px-2 py-1 text-sm"
+                  />
+                </label>
+              </div>
+            </fieldset>
+          </div>
+        </section>
+        {loading && <p className="text-sm text-stone-500">Loading shelters...</p>}
+        {error && <p className="text-sm text-red-700">{error}</p>}
+        <div className="flex flex-col gap-4 md:flex-row md:items-stretch">
+          <div
+            ref={mapContainer}
+            className="h-[28rem] w-full overflow-hidden rounded-lg border border-stone-200 bg-stone-200 md:h-[36rem] md:min-w-0 md:flex-1"
+          />
+          <ShelterSidebar
+            shelters={shelters}
+            selectedShelter={selectedShelter}
+            onSelect={setSelectedShelter}
+            onBack={() => setSelectedShelter(null)}
+            userLocation={userLocation}
+            filters={{
+              searchText,
+              families: filters.families,
+              single_women: filters.single_women,
+              single_men: filters.single_men,
+              domestic_violence: filters.domestic_violence,
+              pet_friendly: filters.pet_friendly,
+              wheelchair_accessible: filters.wheelchair_accessible,
+              age_min: filters.age_min,
+              age_max: filters.age_max,
+              beds_available_only: filters.beds_available_only,
+            }}
+          />
+        </div>
+      </main>
     </div>
   );
 }
